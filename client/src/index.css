@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Design tokens — WCAG AA compliant colour palette */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f7f8fa;
+  --color-border: #e5e7eb;
+  --color-text: #1f2328;
+  --color-muted: #57606a;
+  --color-accent: #1d4ed8;        /* blue-700 — AA on white */
+  --color-accent-hover: #1e40af;
+  --color-demo-bg: #fef3c7;       /* amber-100 */
+  --color-demo-border: #d97706;   /* amber-600 */
+  --color-demo-text: #92400e;     /* amber-800 */
+
+  /* Priority colours — all AA contrast on white */
+  --color-urgent: #dc2626;        /* red-600 */
+  --color-high: #d97706;          /* amber-600 */
+  --color-medium: #2563eb;        /* blue-600 */
+  --color-low: #16a34a;           /* green-600 */
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.6;
+}
