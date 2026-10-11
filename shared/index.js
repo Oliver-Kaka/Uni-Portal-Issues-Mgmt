@@ -53,6 +53,52 @@ export const PHONE_REGEX = /^(\+2547\d{8}|07\d{8}|01\d{8})$/;
 export const TRACKING_ID_REGEX = /^HD-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 
 // ---------------------------------------------------------------------------
+// PII placeholder tokens — canonical names used by maskPII() on the server
+// and displayed in the "What the AI sees" preview on the client.
+// ---------------------------------------------------------------------------
+
+export const PII_PLACEHOLDERS = {
+  REG_NO:    '[REG_NO]',
+  PHONE:     '[PHONE]',
+  EMAIL:     '[EMAIL]',
+  ID_NUMBER: '[ID_NUMBER]',
+  TXN_CODE:  '[TXN_CODE]',
+};
+
+// PII detection regexes (global flag so replaceAll works in one pass).
+// Order matters: most-specific patterns MUST run before broad ones.
+export const PII_PATTERNS = [
+  // 1. Reg/staff number — most specific, run first to avoid partial matches
+  { regex: /[A-Z]{3}\d{3}-\d{4}\/20[0-9]{2}/g, placeholder: PII_PLACEHOLDERS.REG_NO },
+  // 2. Email address (before phone so user@07xx.com is caught as email)
+  { regex: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g, placeholder: PII_PLACEHOLDERS.EMAIL },
+  // 3. Kenyan phone numbers — international +2547xx or local 07xx / 01xx, 10 digits total
+  //    +2547XXXXXXXX : +254 then 7 then 8 digits
+  //    07XXXXXXXX    : 0 then 7 then 8 digits
+  //    01XXXXXXXX    : 0 then 1 then 8 digits (Telkom)
+  { regex: /(?:\+254[71]\d{8}|0[71]\d{8})/g, placeholder: PII_PLACEHOLDERS.PHONE },
+  // 4. Kenyan M-Pesa transaction code: letter-heavy 10-char alphanum, e.g. QHJ1234ABC
+  //    Must run AFTER phone so 07xx numbers are not consumed here
+  { regex: /\b[A-Z]{2,3}[0-9A-Z]{7,10}\b/g, placeholder: PII_PLACEHOLDERS.TXN_CODE },
+  // 5. Passport-like: 1–2 uppercase letters followed by 6–8 digits
+  { regex: /\b[A-Z]{1,2}\d{6,8}\b/g, placeholder: PII_PLACEHOLDERS.ID_NUMBER },
+  // 6. Standalone 6–9 digit number (national ID fallback)
+  { regex: /\b\d{6,9}\b/g, placeholder: PII_PLACEHOLDERS.ID_NUMBER },
+];
+
+// ---------------------------------------------------------------------------
+// Supported languages
+// ---------------------------------------------------------------------------
+
+export const SUPPORTED_LANGUAGES = ['en', 'sw', 'mixed'];
+
+export const LANGUAGE_LABELS = {
+  en: 'English',
+  sw: 'Kiswahili',
+  mixed: 'Mixed',
+};
+
+// ---------------------------------------------------------------------------
 // Field length limits
 // ---------------------------------------------------------------------------
 
