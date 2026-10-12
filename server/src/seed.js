@@ -395,6 +395,84 @@ const SEEDS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Chart seed data — 50 fictional resolved tickets over the last 30-60 days
+// These give the analytics charts meaningful data to display.
+// Demo Only: Use Fictional Data
+// ---------------------------------------------------------------------------
+
+/** Returns a Date that is `daysAgo` days before now, at the given hour. */
+function daysBack(daysAgo, hour = 9) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(hour, 0, 0, 0);
+  return d;
+}
+
+const CHART_CATEGORIES = [
+  'Portal Login Failure',
+  'Fee Discrepancy',
+  'Unit Registration',
+  'Graduation / Email Transfer',
+  'Student ID Replacement',
+];
+
+const CHART_PRIORITIES   = ['Low', 'Medium', 'High', 'Urgent'];
+const CHART_ROUTES       = ['IT Help Desk', 'Finance & Bursary', "Registrar's Office", 'Student Services', 'Alumni & IT Services'];
+const CHART_ETA_HOURS    = [4, 8, 24, 48, 72];
+const CHART_ACTUAL_HOURS = [3, 6, 20, 44, 70, 100];
+
+const CHART_REG_NOS = [
+  'SCT221-1001/2023', 'SCT221-1002/2023', 'BUS890-1003/2022',
+  'ENG101-1004/2024', 'LAW456-1005/2023', 'ICT555-1006/2022',
+  'MED302-1007/2021', 'NUR111-1008/2024', 'HRD776-1009/2025',
+  'AAA000-1010/2020',
+];
+
+function pick(arr, i) { return arr[i % arr.length]; }
+
+const CHART_SEEDS = Array.from({ length: 50 }, (_, i) => {
+  const daysAgo  = 3 + Math.floor((i / 50) * 57); // spread from 3 to 60 days ago
+  const cat      = pick(CHART_CATEGORIES, i * 3);
+  const pri      = pick(CHART_PRIORITIES, i * 2);
+  const eta      = pick(CHART_ETA_HOURS, i);
+  const actual   = pick(CHART_ACTUAL_HOURS, i);
+  const route    = pick(CHART_ROUTES, i);
+  const regNo    = pick(CHART_REG_NOS, i);
+  const created  = daysBack(daysAgo, 8 + (i % 10));
+  const resolved = new Date(created.getTime() + actual * 60 * 60 * 1000);
+
+  return {
+    trackingId:            `HD-CHART-${String(i + 1).padStart(3, '0')}`,
+    regNo,
+    issueDate:             new Date(created),
+    description:           `Fictional resolved ticket #${i + 1} for chart data. Category: ${cat}.`,
+    maskedDescription:     `Fictional resolved ticket #${i + 1} for chart data. Category: ${cat}.`,
+    hadPII:                false,
+    category:              cat,
+    priority:              pri,
+    routeTo:               route,
+    canAutoResolve:        i % 3 !== 0,
+    etaHours:              eta,
+    actualResolutionHours: actual,
+    summary:               `Fictional ticket #${i + 1} resolved for demo purposes.`,
+    summaryEn:             `Fictional ticket #${i + 1} resolved for demo purposes.`,
+    detectedLanguage:      i % 5 === 0 ? 'sw' : 'en',
+    suggestedSteps:        [],
+    aiConfidenceLow:       i % 7 === 0,
+    adminCategory:         i % 10 === 0 ? pick(CHART_CATEGORIES, i + 1) : null,
+    status:                'Resolved',
+    statusHistory: [
+      { status: 'Open',     publicNote: 'Ticket received.',  changedAt: created },
+      { status: 'Resolved', publicNote: 'Issue resolved.',   changedAt: resolved },
+    ],
+    createdAt: created,
+    updatedAt: resolved,
+  };
+});
+
+const ALL_SEEDS = [...SEEDS, ...CHART_SEEDS];
+
+// ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 async function run() {
@@ -408,10 +486,11 @@ async function run() {
   let inserted = 0;
   let skipped = 0;
 
-  for (const seed of SEEDS) {
+  for (const seed of ALL_SEEDS) {
+    const doc = { ...seed, isDemoSeed: true };
     const result = await Ticket.updateOne(
-      { trackingId: seed.trackingId },
-      { $setOnInsert: { ...seed, isDemoSeed: true } },
+      { trackingId: doc.trackingId },
+      { $setOnInsert: doc },
       { upsert: true },
     );
     if (result.upsertedCount > 0) {
@@ -421,7 +500,7 @@ async function run() {
     }
   }
 
-  console.log(`[Seed] Done. Inserted: ${inserted}, Skipped (already exist): ${skipped}`);
+  console.log(`[Seed] Done. Inserted: ${inserted}, Skipped (already exist): ${skipped} (total attempted: ${ALL_SEEDS.length})`);
   await mongoose.connection.close();
   process.exit(0);
 }

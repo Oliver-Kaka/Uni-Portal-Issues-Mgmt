@@ -51,3 +51,18 @@ export const trackLimiter = rateLimit({
     });
   },
 });
+
+/** Applied to POST /api/admin/login — brute-force protection */
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: 'Too many login attempts. Please wait 15 minutes.',
+      retryAfter: res.getHeader('Retry-After'),
+    });
+  },
+});

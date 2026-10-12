@@ -122,6 +122,16 @@ export const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 
 export const STATUSES = ['Open', 'In Progress', 'Escalated', 'Resolved', 'Closed'];
 
+/** Departments tickets can be routed to. Used in admin reassign dropdown. */
+export const DEPARTMENTS = [
+  'IT Help Desk',
+  'Finance & Bursary',
+  "Registrar's Office",
+  'Student Services',
+  'Alumni & IT Services',
+  'Help Desk — Manual Review',
+];
+
 // ---------------------------------------------------------------------------
 // UI translations — English and Kiswahili
 // All translatable strings live here; no translated text anywhere else.

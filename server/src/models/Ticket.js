@@ -3,7 +3,7 @@
  * Demo Only: Use Fictional Data
  */
 import mongoose from 'mongoose';
-import { CATEGORIES, PRIORITIES, STATUSES } from '@helpdesk/shared';
+import { CATEGORIES, PRIORITIES, STATUSES, DEPARTMENTS } from '@helpdesk/shared';
 
 const { Schema } = mongoose;
 
@@ -57,6 +57,16 @@ const ticketSchema = new Schema(
     // Flag set when AI fallback was triggered (public) or confidence < threshold
     aiConfidenceLow: { type: Boolean, default: false },
 
+    // ---------------------------------------------------------------------------
+    // Admin-only fields — NEVER returned by public endpoints
+    // ---------------------------------------------------------------------------
+
+    // Admin can override the AI-assigned category (tracks accuracy)
+    adminCategory: { type: String, enum: [...CATEGORIES, null], default: null },
+
+    // Actual hours taken to resolve (set by admin on closure)
+    actualResolutionHours: { type: Number, default: null },
+
     // Lifecycle
     status:        { type: String, enum: STATUSES, default: 'Open', required: true },
     statusHistory: { type: [statusHistorySchema], default: [] },
@@ -69,8 +79,11 @@ const ticketSchema = new Schema(
   },
 );
 
-// Index for admin list queries (future use)
+// Indexes for admin list, filters and analytics
 ticketSchema.index({ createdAt: -1 });
+ticketSchema.index({ status: 1, createdAt: -1 });
+ticketSchema.index({ category: 1, createdAt: -1 });
+ticketSchema.index({ priority: 1 });
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
 export default Ticket;

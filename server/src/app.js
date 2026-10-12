@@ -6,14 +6,16 @@
  */
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { globalLimiter } from './middleware/rateLimiter.js';
 import ticketRoutes from './routes/tickets.js';
+import adminRoutes from './routes/admin.js';
 import mongoose from 'mongoose';
 
 const app = express();
 
 // ---------------------------------------------------------------------------
-// CORS
+// CORS — credentials must be allowed for httpOnly cookie to work
 // ---------------------------------------------------------------------------
 const allowedOrigins = [
   process.env.CLIENT_ORIGIN || 'http://localhost:5173',
@@ -22,15 +24,16 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Allow requests with no origin (e.g. curl, Postman during dev)
       if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
       cb(new Error(`CORS: origin ${origin} not allowed`));
     },
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    credentials: true,
   }),
 );
 
 app.use(express.json({ limit: '16kb' }));
+app.use(cookieParser());
 
 // ---------------------------------------------------------------------------
 // Rate limiting — global guard
@@ -41,6 +44,7 @@ app.use('/api', globalLimiter);
 // Routes
 // ---------------------------------------------------------------------------
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -61,10 +65,8 @@ app.use('/api/*', (req, res) => {
 // ---------------------------------------------------------------------------
 // Central error handler
 // ---------------------------------------------------------------------------
-// EXTENSION: Add structured error logging (e.g. Sentry) here.
 app.use((err, req, res, _next) => {
   const status = err.status || 500;
-  // Never expose internal error details to the client in production
   const message =
     process.env.NODE_ENV === 'production'
       ? 'An unexpected error occurred.'
