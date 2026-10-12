@@ -123,6 +123,214 @@ export const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 export const STATUSES = ['Open', 'In Progress', 'Escalated', 'Resolved', 'Closed'];
 
 // ---------------------------------------------------------------------------
+// UI translations — English and Kiswahili
+// All translatable strings live here; no translated text anywhere else.
+// ---------------------------------------------------------------------------
+
+export const UI_STRINGS = {
+  en: {
+    // Nav
+    navSubmit: 'Submit Issue',
+    navTrack: 'Track Issue',
+    // Submit form
+    submitTitle: 'Submit an Issue',
+    submitSubtitle: 'Describe your issue and our AI assistant will triage and route it to the right department.',
+    fieldRegNo: 'Registration / Staff Number',
+    fieldDate: 'Date of Issue',
+    fieldDescription: 'Issue Description',
+    fieldPhone: 'Phone Number (optional)',
+    fieldConsent: 'I understand this is a demo system using fictional data only and consent to this information being processed for demonstration purposes.',
+    btnSubmit: 'Submit Issue',
+    btnSubmitting: 'Submitting…',
+    descPlaceholder: 'Describe your issue in detail (minimum 20 characters)…',
+    // Success
+    successTitle: 'Issue Submitted ✓',
+    successSubtitle: 'Your issue has been logged. Save your tracking ID to check the status later.',
+    labelTrackingId: 'Your Tracking ID',
+    labelCategory: 'Category',
+    labelPriority: 'Priority',
+    labelRouteTo: 'Routed to',
+    labelEta: 'Est. resolution',
+    labelAutoResolve: 'Can self-resolve',
+    labelAutoResolveYes: 'Yes',
+    labelAutoResolveNo: 'No — escalation needed',
+    labelTriageSummary: 'Triage Summary',
+    linkTrack: 'Track this issue →',
+    btnCopy: 'Copy',
+    btnCopied: 'Copied!',
+    // PII preview
+    piiPreviewTitle: 'What the AI sees',
+    piiPreviewNote: 'Your personal identifiers have been replaced with placeholders before being sent to the AI.',
+    piiNoneFound: 'No personal identifiers detected in your description.',
+    // Confidence / review
+    lowConfidenceWarning: 'This issue could not be automatically classified. A help desk agent will review it manually.',
+    // Track page
+    trackTitle: 'Track Your Issue',
+    trackSubtitle: 'Enter your tracking ID to see the current status of your issue.',
+    trackPlaceholder: 'HD-XXXX-XXXX',
+    btnTrack: 'Track',
+    btnTracking: 'Searching…',
+    labelStatus: 'Status',
+    labelSubmitted: 'Submitted',
+    labelStatusHistory: 'Status History',
+    trackNotFound: 'No ticket found for that ID. Please check and try again.',
+    trackRateLimit: 'Too many requests. Please wait a moment and try again.',
+    trackError: 'Could not retrieve ticket. Please try again.',
+    trackInvalidId: 'Enter a valid tracking ID in the format HD-XXXX-XXXX.',
+    labelDetectedLanguage: 'Detected language',
+    // Language toggle
+    langToggleLabel: 'Language',
+    // FAQ
+    faqTitle: 'Quick Tips',
+    faqNote: 'Demo content — these tips are for illustration only.',
+  },
+  sw: {
+    // Nav
+    navSubmit: 'Wasilisha Tatizo',
+    navTrack: 'Fuatilia Tatizo',
+    // Submit form
+    submitTitle: 'Wasilisha Tatizo',
+    submitSubtitle: 'Eleza tatizo lako na msaidizi wetu wa AI atalisimamia na kulipeleka idara sahihi.',
+    fieldRegNo: 'Nambari ya Usajili / Wafanyakazi',
+    fieldDate: 'Tarehe ya Tatizo',
+    fieldDescription: 'Maelezo ya Tatizo',
+    fieldPhone: 'Nambari ya Simu (si lazima)',
+    fieldConsent: 'Ninaelewa mfumo huu ni wa maonyesho tu unaotumia data ya kufikirika na ninakubali maelezo haya kuchakatwa kwa madhumuni ya maonyesho.',
+    btnSubmit: 'Wasilisha Tatizo',
+    btnSubmitting: 'Inatuma…',
+    descPlaceholder: 'Eleza tatizo lako kwa undani (angalau herufi 20)…',
+    // Success
+    successTitle: 'Tatizo Limewasilishwa ✓',
+    successSubtitle: 'Tatizo lako limerekodiwa. Hifadhi nambari yako ya ufuatiliaji ili kuangalia hali baadaye.',
+    labelTrackingId: 'Nambari Yako ya Ufuatiliaji',
+    labelCategory: 'Aina',
+    labelPriority: 'Kipaumbele',
+    labelRouteTo: 'Imepelekwa',
+    labelEta: 'Muda wa kumaliza',
+    labelAutoResolve: 'Inaweza kutatuliwa bila kupandishwa',
+    labelAutoResolveYes: 'Ndiyo',
+    labelAutoResolveNo: 'Hapana — inahitaji kupandishwa',
+    labelTriageSummary: 'Muhtasari wa Uchunguzi',
+    linkTrack: 'Fuatilia tatizo hili →',
+    btnCopy: 'Nakili',
+    btnCopied: 'Imenakiliwa!',
+    // PII preview
+    piiPreviewTitle: 'AI Inaona Nini',
+    piiPreviewNote: 'Vitambulisho vyako vya kibinafsi vimebadilishwa na vibeba nafasi kabla ya kutumwa kwa AI.',
+    piiNoneFound: 'Vitambulisho vya kibinafsi havikupatikana katika maelezo yako.',
+    // Confidence / review
+    lowConfidenceWarning: 'Tatizo hili halikuweza kuainishwa kiotomatiki. Wakala wa dawati la msaada ataliangalia.',
+    // Track page
+    trackTitle: 'Fuatilia Tatizo Lako',
+    trackSubtitle: 'Ingiza nambari yako ya ufuatiliaji kuona hali ya tatizo lako.',
+    trackPlaceholder: 'HD-XXXX-XXXX',
+    btnTrack: 'Fuatilia',
+    btnTracking: 'Inatafuta…',
+    labelStatus: 'Hali',
+    labelSubmitted: 'Iliwasilishwa',
+    labelStatusHistory: 'Historia ya Hali',
+    trackNotFound: 'Tikiti hazipatikani kwa kitambulisho hicho. Tafadhali angalia na ujaribu tena.',
+    trackRateLimit: 'Maombi mengi sana. Tafadhali subiri na ujaribu tena.',
+    trackError: 'Tikiti haikuweza kupatikana. Tafadhali jaribu tena.',
+    trackInvalidId: 'Ingiza kitambulisho halali cha ufuatiliaji katika muundo HD-XXXX-XXXX.',
+    labelDetectedLanguage: 'Lugha iliyotambuliwa',
+    // Language toggle
+    langToggleLabel: 'Lugha',
+    // FAQ
+    faqTitle: 'Vidokezo vya Haraka',
+    faqNote: 'Maudhui ya maonyesho — vidokezo hivi ni kwa mfano tu.',
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Self-service FAQ — keyed by category, bilingual (en + sw)
+// Demo content only. No real university procedures.
+// ---------------------------------------------------------------------------
+
+export const FAQ_TIPS = {
+  'Portal Login Failure': {
+    en: [
+      'Try resetting your password via the "Forgot Password" link on the login page.',
+      'Clear your browser cache and cookies, then try a different browser.',
+      'Check that Caps Lock is off — passwords are case-sensitive.',
+    ],
+    sw: [
+      'Jaribu kubadilisha nywila yako kupitia kiungo cha "Nimesahau Nywila" kwenye ukurasa wa kuingia.',
+      'Futa cache na vidakuzi vya kivinjari chako, kisha jaribu kivinjari kingine.',
+      'Hakikisha Caps Lock imezimwa — nywila zinazingatia herufi kubwa na ndogo.',
+    ],
+  },
+  'Fee Discrepancy': {
+    en: [
+      'Download your official fee statement from the Finance portal before contacting support.',
+      'Keep your payment receipt or M-Pesa confirmation message ready for reference.',
+      'Check whether the charge relates to a supplementary exam, late registration, or library fine.',
+    ],
+    sw: [
+      'Pakua taarifa rasmi ya ada kutoka kwenye mfumo wa Fedha kabla ya kuwasiliana na msaada.',
+      'Hifadhi risiti yako ya malipo au ujumbe wa uthibitisho wa M-Pesa kwa kumbukumbu.',
+      'Angalia kama ada hiyo inahusiana na mtihani wa ziada, usajili wa kuchelewa, au faini ya maktaba.',
+    ],
+  },
+  'Unit Registration': {
+    en: [
+      'Confirm you have met all prerequisites for the unit in your academic record.',
+      'Check if your account has any holds (financial, library, or academic) that block registration.',
+      'Registration windows are strictly enforced — note the open and close dates on the academic calendar.',
+    ],
+    sw: [
+      'Thibitisha umekidhi mahitaji yote ya awali ya somo katika rekodi yako ya masomo.',
+      'Angalia kama akaunti yako ina vizuizi vyovyote (fedha, maktaba, au masomo) vinavyozuia usajili.',
+      'Muda wa usajili unazingatiwa kwa ukali — kumbuka tarehe za kufungua na kufunga kwenye kalenda ya masomo.',
+    ],
+  },
+  'Graduation / Email Transfer': {
+    en: [
+      'Allow up to 14 working days after graduation confirmation for email migration.',
+      'Check your spam folder for the alumni account activation email.',
+      'Ensure your personal email address on file is current and accessible.',
+    ],
+    sw: [
+      'Ruhusu hadi siku 14 za kazi baada ya uthibitisho wa kuhitimu kwa uhamishaji wa barua pepe.',
+      'Angalia folda yako ya spam kwa barua pepe ya uanzishaji wa akaunti ya wahitimu.',
+      'Hakikisha anwani yako ya barua pepe ya kibinafsi iliyorekodiwa ni ya sasa na inafikiwa.',
+    ],
+  },
+  'Student ID Replacement': {
+    en: [
+      'Visit Student Services in person with a secondary ID (e.g. national ID or passport).',
+      'A temporary access pass can be issued on the same day while your card is processed.',
+      'Report a stolen card to campus security as well as the help desk.',
+    ],
+    sw: [
+      'Tembelea Huduma za Wanafunzi mwenyewe na kitambulisho kingine (k.m. kitambulisho cha taifa au pasi).',
+      'Kibali cha ufikiaji wa muda kinaweza kutolewa siku hiyo hiyo wakati kadi yako inashughulikiwa.',
+      'Ripoti kadi iliyoibiwa kwa usalama wa chuo pamoja na dawati la msaada.',
+    ],
+  },
+  'Needs Human Review': {
+    en: [
+      'A help desk agent will contact you within 48 hours to discuss your issue.',
+      'Gather any relevant documents (receipts, screenshots, letters) to speed up resolution.',
+    ],
+    sw: [
+      'Wakala wa dawati la msaada atawasiliana nawe ndani ya masaa 48 kujadili tatizo lako.',
+      'Kusanya nyaraka zozote muhimu (risiti, picha za skrini, barua) ili kuharakisha utatuzi.',
+    ],
+  },
+};
+
+// ---------------------------------------------------------------------------
+// AI Disclaimer — mandatory text, shown on Submit, Result and Track pages.
+// Exact wording approved by project brief; do not alter without approval.
+// ---------------------------------------------------------------------------
+
+export const AI_DISCLAIMER =
+  'AI Notice: The AI model used in this prototype has not been validated for accuracy, fairness, or completeness. ' +
+  'All triage results are suggestions only and must be reviewed by a qualified help desk agent before any action is taken. ' +
+  'Do not submit real personal data. This system uses fictional demo data only.';
+
+// ---------------------------------------------------------------------------
 // Convenience validation helpers (pure functions, no side-effects)
 // ---------------------------------------------------------------------------
 

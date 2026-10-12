@@ -1,10 +1,13 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { LanguageProvider, useLang } from './context/LanguageContext.jsx';
 import DemoBanner from './components/DemoBanner.jsx';
+import LanguageToggle from './components/LanguageToggle.jsx';
 import SubmitPage from './pages/SubmitPage.jsx';
 import TrackPage from './pages/TrackPage.jsx';
 
-export default function App() {
+function AppShell() {
   const { pathname } = useLocation();
+  const { t } = useLang();
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -12,25 +15,26 @@ export default function App() {
 
       {/* Nav */}
       <header className="border-b" style={{ borderColor: 'var(--color-border)' }}>
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <span className="font-semibold text-base" style={{ color: 'var(--color-text)' }}>
             Campus Help Desk
           </span>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex items-center gap-4 text-sm">
             <Link
               to="/"
               className="hover:underline"
               style={{ color: pathname === '/' ? 'var(--color-accent)' : 'var(--color-muted)' }}
             >
-              Submit Issue
+              {t.navSubmit}
             </Link>
             <Link
               to="/track"
               className="hover:underline"
-              style={{ color: pathname === '/track' ? 'var(--color-accent)' : 'var(--color-muted)' }}
+              style={{ color: pathname.startsWith('/track') ? 'var(--color-accent)' : 'var(--color-muted)' }}
             >
-              Track Issue
+              {t.navTrack}
             </Link>
+            <LanguageToggle />
           </nav>
         </div>
       </header>
@@ -43,9 +47,20 @@ export default function App() {
         </Routes>
       </main>
 
-      <footer className="text-center text-xs py-4" style={{ color: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}>
+      <footer
+        className="text-center text-xs py-4"
+        style={{ color: 'var(--color-muted)', borderTop: '1px solid var(--color-border)' }}
+      >
         Campus Help Desk Assistant · Demo Only: Use Fictional Data
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppShell />
+    </LanguageProvider>
   );
 }

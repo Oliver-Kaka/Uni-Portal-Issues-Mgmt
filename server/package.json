@@ -29,6 +29,9 @@
     "extensionsToTreatAsEsm": [".js"],
     "transform": {},
     "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.js"]
+    "testMatch": ["**/tests/**/*.test.js"],
+    "moduleNameMapper": {
+      "^sanitize-html$": "<rootDir>/../server/src/__mocks__/sanitize-html.js"
+    }
   }
 }

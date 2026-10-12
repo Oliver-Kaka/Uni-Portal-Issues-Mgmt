@@ -1,15 +1,38 @@
 /**
  * Submit Issue page — Page 1.
+ * Features: bilingual labels, FAQ tips, PII preview, AI disclaimer, confidence badge.
  * Demo Only: Use Fictional Data
  */
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { validateSubmitForm } from '../utils/validators.js';
 import { useSubmitIssue } from '../hooks/useSubmitIssue.js';
+import { useLang } from '../context/LanguageContext.jsx';
 import PriorityBadge from '../components/PriorityBadge.jsx';
+import NeedsReviewBadge from '../components/NeedsReviewBadge.jsx';
+import PIIPreview from '../components/PIIPreview.jsx';
+import FAQTips from '../components/FAQTips.jsx';
+import AIDisclaimer from '../components/AIDisclaimer.jsx';
 import { DESCRIPTION_MAX } from '@helpdesk/shared';
 
 const todayISO = () => new Date().toISOString().split('T')[0];
+
+// Naive category guesser from description — shows FAQ tips before submission.
+// This is client-side only and does not contact the server.
+function guessCategory(description) {
+  const d = description.toLowerCase();
+  if (/log.?in|password|account.?lock|portal.?access|sign.?in|login/i.test(d))
+    return 'Portal Login Failure';
+  if (/fee|payment|charge|balance|invoice|receipt|mpesa|m-pesa/i.test(d))
+    return 'Fee Discrepancy';
+  if (/register|registration|unit|course|enroll|enrol|hold/i.test(d))
+    return 'Unit Registration';
+  if (/graduat|email.?transfer|alumni|certificate|transcript/i.test(d))
+    return 'Graduation / Email Transfer';
+  if (/id.?card|student.?card|card.?lost|card.?stolen|card.?damage|replacement/i.test(d))
+    return 'Student ID Replacement';
+  return null;
+}
 
 function FieldError({ message }) {
   if (!message) return null;
@@ -24,7 +47,8 @@ function InputWrapper({ label, htmlFor, required, children, error }) {
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={htmlFor} className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-        {label}{required && <span aria-hidden="true" style={{ color: '#dc2626' }}> *</span>}
+        {label}
+        {required && <span aria-hidden="true" style={{ color: '#dc2626' }}> *</span>}
       </label>
       {children}
       <FieldError message={error} />
@@ -33,6 +57,7 @@ function InputWrapper({ label, htmlFor, required, children, error }) {
 }
 
 export default function SubmitPage() {
+  const { t } = useLang();
   const [form, setForm] = useState({
     regNo: '',
     issueDate: '',
@@ -46,6 +71,7 @@ export default function SubmitPage() {
   const [copied, setCopied] = useState(false);
 
   const errors = { ...clientErrors, ...serverErrors };
+  const guessedCategory = guessCategory(form.description);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -86,24 +112,34 @@ export default function SubmitPage() {
     }
   }
 
-  // --- Success screen ---
+  const etaLabel = (hours) => {
+    if (!hours) return '—';
+    return hours < 24 ? `${hours}h` : `${hours / 24} day${hours / 24 !== 1 ? 's' : ''}`;
+  };
+
+  // ── Success screen ──────────────────────────────────────────────────────────
   if (result?.success) {
     return (
-      <div>
-        <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-          Issue Submitted ✓
-        </h1>
-        <p className="text-sm mb-6" style={{ color: 'var(--color-muted)' }}>
-          Your issue has been logged. Save your tracking ID to check the status later.
-        </p>
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
+            {t.successTitle}
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+            {t.successSubtitle}
+          </p>
+        </div>
+
+        {/* AI Disclaimer */}
+        <AIDisclaimer />
 
         {/* Tracking ID card */}
         <div
-          className="rounded-lg border p-5 mb-6"
+          className="rounded-lg border p-5"
           style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
         >
           <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-muted)' }}>
-            Your Tracking ID
+            {t.labelTrackingId}
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <span
@@ -116,85 +152,114 @@ export default function SubmitPage() {
             <button
               onClick={copyTrackingId}
               className="text-xs px-3 py-1 rounded border font-medium"
-              style={{
-                borderColor: 'var(--color-accent)',
-                color: 'var(--color-accent)',
-                backgroundColor: 'transparent',
-              }}
+              style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)', backgroundColor: 'transparent' }}
             >
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? t.btnCopied : t.btnCopy}
             </button>
           </div>
         </div>
 
         {/* Triage results */}
         <div
-          className="rounded-lg border p-5 space-y-3 mb-6"
+          className="rounded-lg border p-5 space-y-3"
           style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
         >
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-            Triage Summary
-          </h2>
-          <div className="grid grid-cols-2 gap-y-2 text-sm">
-            <span style={{ color: 'var(--color-muted)' }}>Category</span>
-            <span style={{ color: 'var(--color-text)' }}>{result.category}</span>
-
-            <span style={{ color: 'var(--color-muted)' }}>Priority</span>
-            <span><PriorityBadge priority={result.priority} /></span>
-
-            <span style={{ color: 'var(--color-muted)' }}>Routed to</span>
-            <span style={{ color: 'var(--color-text)' }}>{result.routeTo}</span>
-
-            <span style={{ color: 'var(--color-muted)' }}>Est. resolution</span>
-            <span style={{ color: 'var(--color-text)' }}>
-              {result.etaHours < 24
-                ? `${result.etaHours} hour${result.etaHours !== 1 ? 's' : ''}`
-                : `${result.etaHours / 24} day${result.etaHours / 24 !== 1 ? 's' : ''}`}
-            </span>
-
-            <span style={{ color: 'var(--color-muted)' }}>Can self-resolve</span>
-            <span style={{ color: 'var(--color-text)' }}>{result.canAutoResolve ? 'Yes' : 'No — escalation needed'}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+              {t.labelTriageSummary}
+            </h2>
+            {(result.aiConfidenceLow || result.category === 'Needs Human Review') && (
+              <NeedsReviewBadge />
+            )}
           </div>
 
-          {result.aiConfidenceLow && (
-            <p className="text-xs p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-              ⚠ This issue could not be automatically classified. A help desk agent will review it manually.
-            </p>
-          )}
+          <div className="grid grid-cols-2 gap-y-2 text-sm">
+            <span style={{ color: 'var(--color-muted)' }}>{t.labelCategory}</span>
+            <span style={{ color: 'var(--color-text)' }}>{result.category}</span>
+
+            <span style={{ color: 'var(--color-muted)' }}>{t.labelPriority}</span>
+            <span><PriorityBadge priority={result.priority} /></span>
+
+            <span style={{ color: 'var(--color-muted)' }}>{t.labelRouteTo}</span>
+            <span style={{ color: 'var(--color-text)' }}>{result.routeTo}</span>
+
+            <span style={{ color: 'var(--color-muted)' }}>{t.labelEta}</span>
+            <span style={{ color: 'var(--color-text)' }}>{etaLabel(result.etaHours)}</span>
+
+            <span style={{ color: 'var(--color-muted)' }}>{t.labelAutoResolve}</span>
+            <span style={{ color: 'var(--color-text)' }}>
+              {result.canAutoResolve ? t.labelAutoResolveYes : t.labelAutoResolveNo}
+            </span>
+
+            {result.detectedLanguage && (
+              <>
+                <span style={{ color: 'var(--color-muted)' }}>{t.labelDetectedLanguage}</span>
+                <span style={{ color: 'var(--color-text)', textTransform: 'capitalize' }}>
+                  {result.detectedLanguage === 'sw' ? 'Kiswahili' : result.detectedLanguage === 'mixed' ? 'Mixed' : 'English'}
+                </span>
+              </>
+            )}
+          </div>
 
           <hr style={{ borderColor: 'var(--color-border)' }} />
           <p className="text-sm" style={{ color: 'var(--color-text)' }}>{result.summary}</p>
         </div>
+
+        {/* PII preview */}
+        <PIIPreview maskedDescription={result.maskedDescription} hadPII={result.hadPII} />
+
+        {/* Self-service suggestions from AI */}
+        {result.suggestedSteps && result.suggestedSteps.length > 0 && (
+          <div
+            className="rounded-lg border p-4"
+            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
+            <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-accent)' }}>
+              💡 {t.faqTitle}
+            </p>
+            <ul className="space-y-1">
+              {result.suggestedSteps.map((step, i) => (
+                <li key={i} className="flex gap-2 text-xs" style={{ color: 'var(--color-text)' }}>
+                  <span style={{ color: 'var(--color-accent)', flexShrink: 0 }}>›</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <Link
           to={`/track/${result.trackingId}`}
           className="inline-block text-sm underline"
           style={{ color: 'var(--color-accent)' }}
         >
-          Track this issue →
+          {t.linkTrack}
         </Link>
       </div>
     );
   }
 
-  // --- Form screen ---
+  // ── Form screen ─────────────────────────────────────────────────────────────
   const descLen = (form.description || '').length;
-  const isFormValid =
-    Object.keys(validateSubmitForm(form)).length === 0;
 
   return (
-    <div>
-      <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-        Submit an Issue
-      </h1>
-      <p className="text-sm mb-6" style={{ color: 'var(--color-muted)' }}>
-        Describe your issue and our AI assistant will triage and route it to the right department.
-      </p>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
+          {t.submitTitle}
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+          {t.submitSubtitle}
+        </p>
+      </div>
+
+      {/* AI Disclaimer */}
+      <AIDisclaimer />
 
       {networkError && (
         <div
           role="alert"
-          className="rounded border p-3 mb-4 text-sm"
+          className="rounded border p-3 text-sm"
           style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
         >
           {networkError}
@@ -202,8 +267,8 @@ export default function SubmitPage() {
       )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
-        {/* Registration / Staff Number */}
-        <InputWrapper label="Registration / Staff Number" htmlFor="regNo" required error={errors.regNo}>
+        {/* Reg/Staff Number */}
+        <InputWrapper label={t.fieldRegNo} htmlFor="regNo" required error={errors.regNo}>
           <input
             id="regNo"
             name="regNo"
@@ -214,15 +279,12 @@ export default function SubmitPage() {
             onChange={handleChange}
             onBlur={handleBlur}
             className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2"
-            style={{
-              borderColor: errors.regNo ? '#dc2626' : 'var(--color-border)',
-              focusRingColor: 'var(--color-accent)',
-            }}
+            style={{ borderColor: errors.regNo ? '#dc2626' : 'var(--color-border)' }}
           />
         </InputWrapper>
 
         {/* Issue Date */}
-        <InputWrapper label="Date of Issue" htmlFor="issueDate" required error={errors.issueDate}>
+        <InputWrapper label={t.fieldDate} htmlFor="issueDate" required error={errors.issueDate}>
           <input
             id="issueDate"
             name="issueDate"
@@ -238,12 +300,12 @@ export default function SubmitPage() {
         </InputWrapper>
 
         {/* Description */}
-        <InputWrapper label="Issue Description" htmlFor="description" required error={errors.description}>
+        <InputWrapper label={t.fieldDescription} htmlFor="description" required error={errors.description}>
           <textarea
             id="description"
             name="description"
             rows={5}
-            placeholder="Describe your issue in detail (minimum 20 characters)…"
+            placeholder={t.descPlaceholder}
             value={form.description}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -256,8 +318,11 @@ export default function SubmitPage() {
           </p>
         </InputWrapper>
 
+        {/* FAQ Tips — shown when a category can be guessed from the description */}
+        {guessedCategory && descLen >= 20 && <FAQTips category={guessedCategory} />}
+
         {/* Phone (optional) */}
-        <InputWrapper label="Phone Number (optional)" htmlFor="phone" error={errors.phone}>
+        <InputWrapper label={t.fieldPhone} htmlFor="phone" error={errors.phone}>
           <input
             id="phone"
             name="phone"
@@ -284,8 +349,7 @@ export default function SubmitPage() {
           />
           <div>
             <label htmlFor="consentGiven" className="text-sm" style={{ color: 'var(--color-text)' }}>
-              I understand this is a demo system using fictional data only and consent to this information
-              being processed for demonstration purposes.
+              {t.fieldConsent}
             </label>
             <FieldError message={errors.consentGiven} />
           </div>
@@ -298,7 +362,7 @@ export default function SubmitPage() {
           className="w-full rounded py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           style={{ backgroundColor: 'var(--color-accent)' }}
         >
-          {loading ? 'Submitting…' : 'Submit Issue'}
+          {loading ? t.btnSubmitting : t.btnSubmit}
         </button>
       </form>
     </div>

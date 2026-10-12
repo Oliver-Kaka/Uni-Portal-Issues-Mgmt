@@ -1,27 +1,32 @@
 /**
  * Track Issue page — Page 2.
+ * Features: bilingual labels, NeedsReviewBadge, AI disclaimer, suggestedSteps, detectedLanguage.
  * Demo Only: Use Fictional Data
  */
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { isValidTrackingId } from '@helpdesk/shared';
+import { useLang } from '../context/LanguageContext.jsx';
 import PriorityBadge from '../components/PriorityBadge.jsx';
+import NeedsReviewBadge from '../components/NeedsReviewBadge.jsx';
 import StatusTimeline from '../components/StatusTimeline.jsx';
+import AIDisclaimer from '../components/AIDisclaimer.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 const STATUS_COLOURS = {
-  Open:        { bg: '#dbeafe', text: '#1e3a8a' },
+  Open:          { bg: '#dbeafe', text: '#1e3a8a' },
   'In Progress': { bg: '#fef3c7', text: '#92400e' },
-  Escalated:   { bg: '#fce7f3', text: '#9d174d' },
-  Resolved:    { bg: '#dcfce7', text: '#14532d' },
-  Closed:      { bg: '#f3f4f6', text: '#374151' },
+  Escalated:     { bg: '#fce7f3', text: '#9d174d' },
+  Resolved:      { bg: '#dcfce7', text: '#14532d' },
+  Closed:        { bg: '#f3f4f6', text: '#374151' },
 };
 
 export default function TrackPage() {
   const { id: paramId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLang();
 
   const [inputId, setInputId] = useState(paramId || '');
   const [inputError, setInputError] = useState('');
@@ -29,7 +34,6 @@ export default function TrackPage() {
   const [ticket, setTicket] = useState(null);
   const [fetchError, setFetchError] = useState('');
 
-  // If a tracking ID is in the URL, fetch immediately
   useEffect(() => {
     if (paramId && isValidTrackingId(paramId)) {
       fetchTicket(paramId);
@@ -45,11 +49,11 @@ export default function TrackPage() {
       setTicket(res.data.ticket);
     } catch (err) {
       if (err.response?.status === 404) {
-        setFetchError('No ticket found for that ID. Please check and try again.');
+        setFetchError(t.trackNotFound);
       } else if (err.response?.status === 429) {
-        setFetchError('Too many requests. Please wait a moment and try again.');
+        setFetchError(t.trackRateLimit);
       } else {
-        setFetchError('Could not retrieve ticket. Please try again.');
+        setFetchError(t.trackError);
       }
     } finally {
       setLoading(false);
@@ -60,9 +64,8 @@ export default function TrackPage() {
     e.preventDefault();
     const trimmed = inputId.trim().toUpperCase();
     setInputId(trimmed);
-
     if (!isValidTrackingId(trimmed)) {
-      setInputError('Enter a valid tracking ID in the format HD-XXXX-XXXX.');
+      setInputError(t.trackInvalidId);
       return;
     }
     setInputError('');
@@ -76,30 +79,36 @@ export default function TrackPage() {
   };
 
   const statusStyle = ticket ? STATUS_COLOURS[ticket.status] ?? STATUS_COLOURS.Open : {};
+  const langLabel =
+    ticket?.detectedLanguage === 'sw' ? 'Kiswahili'
+    : ticket?.detectedLanguage === 'mixed' ? 'Mixed'
+    : 'English';
 
   return (
-    <div>
-      <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-        Track Your Issue
-      </h1>
-      <p className="text-sm mb-6" style={{ color: 'var(--color-muted)' }}>
-        Enter your tracking ID to see the current status of your issue.
-      </p>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
+          {t.trackTitle}
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+          {t.trackSubtitle}
+        </p>
+      </div>
+
+      {/* AI Disclaimer */}
+      <AIDisclaimer />
 
       {/* Search form */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-6 flex-wrap">
+      <form onSubmit={handleSearch} className="flex gap-2 flex-wrap">
         <div className="flex-1 min-w-0">
           <input
             type="text"
             value={inputId}
             onChange={(e) => setInputId(e.target.value.toUpperCase())}
-            placeholder="HD-XXXX-XXXX"
+            placeholder={t.trackPlaceholder}
             maxLength={12}
             className="w-full rounded border px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2"
-            style={{
-              borderColor: inputError ? '#dc2626' : 'var(--color-border)',
-              textTransform: 'uppercase',
-            }}
+            style={{ borderColor: inputError ? '#dc2626' : 'var(--color-border)' }}
             aria-label="Tracking ID"
           />
           {inputError && (
@@ -114,16 +123,14 @@ export default function TrackPage() {
           className="rounded px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 shrink-0"
           style={{ backgroundColor: 'var(--color-accent)' }}
         >
-          {loading ? 'Searching…' : 'Track'}
+          {loading ? t.btnTracking : t.btnTrack}
         </button>
       </form>
 
-      {/* Loading */}
       {loading && (
-        <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Loading…</p>
+        <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{t.btnTracking}</p>
       )}
 
-      {/* Error */}
       {fetchError && !loading && (
         <div
           role="alert"
@@ -134,7 +141,6 @@ export default function TrackPage() {
         </div>
       )}
 
-      {/* Ticket result */}
       {ticket && !loading && (
         <div className="space-y-5">
           {/* Header card */}
@@ -151,37 +157,65 @@ export default function TrackPage() {
                   {ticket.trackingId}
                 </p>
               </div>
-              <span
-                className="text-xs font-semibold px-3 py-1 rounded-full"
-                style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
-              >
-                {ticket.status}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(ticket.aiConfidenceLow || ticket.category === 'Needs Human Review') && (
+                  <NeedsReviewBadge />
+                )}
+                <span
+                  className="text-xs font-semibold px-3 py-1 rounded-full"
+                  style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
+                >
+                  {ticket.status}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <span style={{ color: 'var(--color-muted)' }}>Category</span>
+              <span style={{ color: 'var(--color-muted)' }}>{t.labelCategory}</span>
               <span style={{ color: 'var(--color-text)' }}>{ticket.category}</span>
 
-              <span style={{ color: 'var(--color-muted)' }}>Priority</span>
+              <span style={{ color: 'var(--color-muted)' }}>{t.labelPriority}</span>
               <span><PriorityBadge priority={ticket.priority} /></span>
 
-              <span style={{ color: 'var(--color-muted)' }}>Est. resolution</span>
+              <span style={{ color: 'var(--color-muted)' }}>{t.labelEta}</span>
               <span style={{ color: 'var(--color-text)' }}>{etaLabel(ticket.etaHours)}</span>
 
-              <span style={{ color: 'var(--color-muted)' }}>Submitted</span>
-              <span style={{ color: 'var(--color-text)' }}>{new Date(ticket.createdAt).toLocaleDateString()}</span>
-            </div>
+              <span style={{ color: 'var(--color-muted)' }}>{t.labelSubmitted}</span>
+              <span style={{ color: 'var(--color-text)' }}>
+                {new Date(ticket.createdAt).toLocaleDateString()}
+              </span>
 
-            {ticket.aiConfidenceLow && (
-              <p className="mt-3 text-xs p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-                ⚠ This ticket is awaiting manual review by a help desk agent.
-              </p>
-            )}
+              {ticket.detectedLanguage && (
+                <>
+                  <span style={{ color: 'var(--color-muted)' }}>{t.labelDetectedLanguage}</span>
+                  <span style={{ color: 'var(--color-text)' }}>{langLabel}</span>
+                </>
+              )}
+            </div>
 
             <hr className="my-4" style={{ borderColor: 'var(--color-border)' }} />
             <p className="text-sm" style={{ color: 'var(--color-text)' }}>{ticket.summary}</p>
           </div>
+
+          {/* Suggested steps */}
+          {ticket.suggestedSteps && ticket.suggestedSteps.length > 0 && (
+            <div
+              className="rounded-lg border p-4"
+              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-accent)' }}>
+                💡 {t.faqTitle}
+              </p>
+              <ul className="space-y-1">
+                {ticket.suggestedSteps.map((step, i) => (
+                  <li key={i} className="flex gap-2 text-xs" style={{ color: 'var(--color-text)' }}>
+                    <span style={{ color: 'var(--color-accent)', flexShrink: 0 }}>›</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Status timeline */}
           <div
@@ -189,7 +223,7 @@ export default function TrackPage() {
             style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
           >
             <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-              Status History
+              {t.labelStatusHistory}
             </h2>
             <StatusTimeline history={ticket.statusHistory} />
           </div>

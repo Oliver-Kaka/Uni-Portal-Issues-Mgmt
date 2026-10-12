@@ -23,31 +23,45 @@ const ticketSchema = new Schema(
   {
     trackingId: { type: String, required: true, unique: true, index: true },
 
-    // Submitter fields — never returned to the Track page
-    regNo: { type: String, required: true },
-    phone: { type: String, default: null },
+    // Submitter fields — NEVER returned to the Track page
+    regNo:   { type: String, required: true },
+    phone:   { type: String, default: null },
 
-    // Issue details — never returned to the Track page
-    issueDate: { type: Date, required: true },
-    description: { type: String, required: true },
+    // Issue details — NEVER returned to the Track page
+    issueDate:   { type: Date,   required: true },
+    description: { type: String, required: true },   // raw original text
+
+    // PII masking — maskedDescription is what Gemini saw; only this is ever
+    // shared externally. originalDescription is kept for admin audit only.
+    maskedDescription: { type: String, default: '' },
+    hadPII:            { type: Boolean, default: false },
 
     // AI triage fields
-    category: { type: String, enum: CATEGORIES, required: true },
-    priority: { type: String, enum: PRIORITIES, required: true },
-    routeTo: { type: String, required: true },
+    category:       { type: String, enum: CATEGORIES, required: true },
+    priority:       { type: String, enum: PRIORITIES, required: true },
+    routeTo:        { type: String, required: true },
     canAutoResolve: { type: Boolean, required: true },
-    etaHours: { type: Number, required: true },
-    // summary is the AI plain-language summary shown to the submitter on the
-    // confirmation screen. It is also returned (masked if needed) on the track page.
-    summary: { type: String, required: true },
-    // Flag set when the AI fallback was triggered
+    etaHours:       { type: Number, required: true },
+
+    // summary: in the user's detected language (shown to submitter)
+    summary:   { type: String, required: true },
+    // summaryEn: English version for staff review
+    summaryEn: { type: String, default: '' },
+
+    // Multilingual
+    detectedLanguage: { type: String, enum: ['en', 'sw', 'mixed'], default: 'en' },
+
+    // Self-service suggestions from Gemini (in user language)
+    suggestedSteps: { type: [String], default: [] },
+
+    // Flag set when AI fallback was triggered (public) or confidence < threshold
     aiConfidenceLow: { type: Boolean, default: false },
 
     // Lifecycle
-    status: { type: String, enum: STATUSES, default: 'Open', required: true },
+    status:        { type: String, enum: STATUSES, default: 'Open', required: true },
     statusHistory: { type: [statusHistorySchema], default: [] },
 
-    // Seed flag — never filter these out in production queries
+    // Seed flag
     isDemoSeed: { type: Boolean, default: false },
   },
   {
