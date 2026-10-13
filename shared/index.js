@@ -133,6 +133,26 @@ export const DEPARTMENTS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Outage detection — configurable threshold and window
+// ---------------------------------------------------------------------------
+
+/** Number of tickets in the same category within OUTAGE_WINDOW_MINUTES that triggers an outage alert */
+export const OUTAGE_TICKET_THRESHOLD = 5;
+
+/** Rolling window in minutes for outage detection */
+export const OUTAGE_WINDOW_MINUTES = 60;
+
+// ---------------------------------------------------------------------------
+// Ticket lifecycle — reopen and satisfaction rating
+// ---------------------------------------------------------------------------
+
+/** Days after resolution during which the submitter can request a reopen */
+export const REOPEN_WINDOW_DAYS = 7;
+
+/** Valid satisfaction ratings (1 = very dissatisfied, 5 = very satisfied) */
+export const SATISFACTION_RATINGS = [1, 2, 3, 4, 5];
+
+// ---------------------------------------------------------------------------
 // UI translations — English and Kiswahili
 // All translatable strings live here; no translated text anywhere else.
 // ---------------------------------------------------------------------------
