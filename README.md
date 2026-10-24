@@ -195,14 +195,24 @@ graph TD
 ```
 campus-helpdesk/                 ← repo root (npm workspaces)
 │
-├── package.json                 ← root: workspaces, concurrently dev script
-├── vercel.json                  ← Vercel build, function, rewrite, header config
+├── package.json                 ← root: workspaces, type:module, engines:node 24.x
+├── package-lock.json
+├── vercel.json                  ← Vercel build, serverless function, routes, headers
 ├── DEPLOY.md                    ← full deployment guide
+├── README.md
+├── campus-helpdesk-plan.md
 ├── .gitignore
+│
+├── api/                         ← Vercel top-level functions directory (required by Vercel)
+│   ├── package.json             ← { "type": "module" }
+│   └── index.js                 ← ESM handler: connectDB + delegates to server/src/app.js
+│
+├── docs/
+│   └── screenshots/             ← placeholder for UI screenshots
 │
 ├── shared/                      ← @helpdesk/shared  (ESM, type: "module")
 │   ├── package.json             ← name: "@helpdesk/shared"
-│   └── index.js                 ← ALL shared constants: regex, enums, PII,
+│   └── index.js                 ← ALL shared constants: regex, enums, PII patterns,
 │                                   UI_STRINGS (EN/SW), FAQ_TIPS, AI_DISCLAIMER,
 │                                   outage/reopen/rating thresholds
 │
@@ -213,81 +223,79 @@ campus-helpdesk/                 ← repo root (npm workspaces)
 │   └── src/
 │       ├── main.jsx
 │       ├── App.jsx              ← routes, lazy admin chunks, Suspense, ErrorBoundary
-│       ├── index.css            ← CSS custom properties (light + dark), focus ring
+│       ├── index.css            ← CSS custom properties (light + dark), :focus-visible ring
 │       ├── context/
 │       │   ├── LanguageContext.jsx  ← EN/SW toggle
 │       │   └── ThemeContext.jsx     ← light/dark/system + localStorage
 │       ├── components/
-│       │   ├── DemoBanner.jsx       ← sticky "Demo Only" warning
-│       │   ├── OutageBanner.jsx     ← polls /meta/outages every 5 min
-│       │   ├── DarkModeToggle.jsx
+│       │   ├── DemoBanner.jsx       ← sticky "Demo Only" warning on every page
+│       │   ├── OutageBanner.jsx     ← polls /api/tickets/meta/outages every 5 min
+│       │   ├── DarkModeToggle.jsx   ← cycles light → dark → system
 │       │   ├── LanguageToggle.jsx
 │       │   ├── AIDisclaimer.jsx
-│       │   ├── ErrorBoundary.jsx
+│       │   ├── ErrorBoundary.jsx    ← class component, catches render errors
 │       │   ├── FAQTips.jsx
-│       │   ├── PIIPreview.jsx
+│       │   ├── PIIPreview.jsx       ← shows maskedDescription vs raw text
 │       │   ├── PriorityBadge.jsx
 │       │   ├── NeedsReviewBadge.jsx
 │       │   └── StatusTimeline.jsx
 │       ├── pages/
-│       │   ├── SubmitPage.jsx       ← issue submission form
-│       │   ├── TrackPage.jsx        ← tracking + rating + reopen
-│       │   └── NotFoundPage.jsx     ← 404
-│       ├── admin/                   ← lazy-loaded admin section
+│       │   ├── SubmitPage.jsx       ← issue submission form + triage result card
+│       │   ├── TrackPage.jsx        ← status timeline + satisfaction rating + reopen
+│       │   └── NotFoundPage.jsx     ← 404 fallback
+│       ├── admin/                   ← lazy-loaded; only bundled when admin logs in
 │       │   ├── AdminAuthContext.jsx
 │       │   ├── AdminLogin.jsx
-│       │   ├── AdminShell.jsx
-│       │   ├── AdminDashboard.jsx   ← KPIs + Recharts
-│       │   ├── AdminTicketTable.jsx
-│       │   ├── AdminTicketDetail.jsx ← SMS log + audit log
-│       │   ├── AdminReports.jsx
-│       │   └── api.js               ← axios with withCredentials
+│       │   ├── AdminShell.jsx       ← route guard + persistent nav
+│       │   ├── AdminDashboard.jsx   ← KPI cards + Recharts analytics
+│       │   ├── AdminTicketTable.jsx ← paginated, filterable ticket list
+│       │   ├── AdminTicketDetail.jsx ← full record + SMS log + audit log
+│       │   ├── AdminReports.jsx     ← CSV / PDF export
+│       │   └── api.js               ← axios instance with withCredentials
 │       ├── hooks/
 │       │   └── useSubmitIssue.js
 │       └── utils/
 │           └── validators.js
 │
-└── server/                      ← Express API
-    ├── package.json
-    ├── jest.config.js
-    ├── .env.example             ← copy to .env and fill in
-    ├── api/
-    │   └── index.js             ← Vercel serverless entry (exports app)
+└── server/                      ← Express API (workspace: @helpdesk/server)
+    ├── package.json             ← type:module, no sanitize-html dependency
+    ├── jest.config.js           ← ESM Jest config (no moduleNameMapper needed)
+    ├── .env.example             ← copy to server/.env and fill in credentials
+    ├── api/                     ← legacy entry (used for local dev only)
+    │   └── index.js             ← local dev serverless shim (not used by Vercel)
     └── src/
-        ├── server.js            ← local dev entry (connectDB + app.listen)
-        ├── app.js               ← helmet, CORS, rateLimiter, routes, error handler
-        ├── seed.js              ← 70 fictional demo tickets, isDemoSeed: true
+        ├── server.js            ← local dev entry: connectDB + app.listen
+        ├── app.js               ← helmet, CORS, cookieParser, rateLimiter, routes
+        ├── seed.js              ← 70 fictional demo tickets; deleteMany + insertMany
         ├── config/
-        │   └── db.js            ← cached MongoDB connection (serverless-safe)
+        │   └── db.js            ← cached Mongoose connection (serverless-safe)
         ├── models/
-        │   ├── Ticket.js
-        │   ├── Notification.js
-        │   └── AuditLog.js
+        │   ├── Ticket.js        ← full schema incl. satisfactionRating, attachmentFilename
+        │   ├── Notification.js  ← mock SMS log
+        │   └── AuditLog.js      ← admin action audit trail
         ├── services/
-        │   ├── geminiService.js ← PII mask → Gemini → validate → fallback
-        │   ├── piiService.js    ← maskPII()
-        │   ├── trackingIdService.js ← crypto random HD-XXXX-XXXX
-        │   ├── authService.js   ← bcrypt + JWT
-        │   ├── smsService.js    ← mock SMS + AT plug-in
-        │   └── outageService.js ← MongoDB aggregation
+        │   ├── geminiService.js ← maskPII → <ISSUE_DESCRIPTION> envelope → Gemini → fallback
+        │   ├── piiService.js    ← maskPII() — 6 ordered PII patterns
+        │   ├── trackingIdService.js ← crypto.randomBytes → HD-XXXX-XXXX
+        │   ├── authService.js   ← bcrypt hash/verify + JWT sign/verify
+        │   ├── smsService.js    ← mock SMS logger + Africa's Talking plug-in point
+        │   └── outageService.js ← MongoDB aggregation → outage detection
         ├── middleware/
-        │   ├── sanitize.js
-        │   ├── validate.js
-        │   ├── rateLimiter.js
-        │   └── requireAdmin.js
+        │   ├── sanitize.js      ← built-in regex sanitiser (no third-party dep)
+        │   ├── validate.js      ← all rules imported from @helpdesk/shared
+        │   ├── rateLimiter.js   ← 4 tiers: global / submit / track / login
+        │   └── requireAdmin.js  ← JWT cookie verification
         ├── controllers/
         │   ├── ticketController.js  ← createTicket, getTicket, submitRating, reopenTicket
-        │   ├── adminController.js
-        │   └── reportController.js  ← exportCSV, exportPDF
+        │   ├── adminController.js   ← login/logout/me, CRUD, analytics, audit logging
+        │   └── reportController.js  ← exportCSV, exportPDF (jsPDF + jsPDF-AutoTable)
         ├── routes/
-        │   ├── tickets.js
-        │   └── admin.js
-        ├── tests/
-        │   ├── pii.test.js           ← 21 unit tests
-        │   ├── admin.auth.test.js    ← 15 unit tests (no DB needed)
-        │   └── ticket.privacy.test.js ← integration tests (needs live DB + key)
-        └── __mocks__/
-            └── sanitize-html.js     ← Jest CJS/ESM compatibility mock
+        │   ├── tickets.js       ← public: submit, track, rating, reopen, outages
+        │   └── admin.js         ← protected: tickets, analytics, reports
+        └── tests/
+            ├── pii.test.js           ← 21 unit tests (no DB)
+            ├── admin.auth.test.js    ← 15 unit tests (no DB)
+            └── ticket.privacy.test.js ← integration tests (needs live DB + Gemini key)
 ```
 
 ---
