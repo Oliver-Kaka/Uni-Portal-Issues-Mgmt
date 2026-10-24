@@ -1,8 +1,13 @@
 /**
- * Seed script — inserts 20 fictional demo tickets.
+ * Seed script — inserts 70 fictional demo tickets (20 narrative + 50 chart).
  * Usage:
- *   npm run seed              → upsert all 20 demo tickets
- *   npm run seed -- --reset   → delete all isDemoSeed documents then re-insert
+ *   npm run seed              → delete all isDemoSeed docs then re-insert
+ *   npm run seed -- --reset   → same behaviour (alias kept for compatibility)
+ *
+ * Strategy: always delete existing isDemoSeed documents first, then use
+ * Model.insertMany(docs, { timestamps: false }) to bypass the schema's
+ * automatic timestamp middleware. Every document carries explicit createdAt
+ * and updatedAt so backdated chart data is preserved exactly.
  *
  * Safety: refuses to run in production unless --force is passed.
  * Demo Only: Use Fictional Data — all names, reg numbers, and descriptions are fictional.
@@ -478,29 +483,33 @@ const ALL_SEEDS = [...SEEDS, ...CHART_SEEDS];
 async function run() {
   await connectDB();
 
-  if (isReset) {
-    const deleted = await Ticket.deleteMany({ isDemoSeed: true });
+  // Always remove existing demo documents before re-inserting.
+  // This avoids the "conflict at updatedAt" error that occurs when
+  // Mongoose's timestamps:true middleware tries to set updatedAt on
+  // an updateOne/$setOnInsert while the doc already has an explicit updatedAt.
+  const deleted = await Ticket.deleteMany({ isDemoSeed: true });
+  if (deleted.deletedCount > 0) {
     console.log(`[Seed] Deleted ${deleted.deletedCount} existing demo tickets.`);
   }
 
-  let inserted = 0;
-  let skipped = 0;
+  // Build final docs — every field explicit, isDemoSeed: true on each.
+  // insertMany with { timestamps: false } tells Mongoose NOT to auto-inject
+  // createdAt / updatedAt, so our backdated dates are preserved exactly.
+  // For seeds that don't carry explicit timestamps (the 20 narrative seeds),
+  // derive createdAt from issueDate and set updatedAt to the most recent
+  // statusHistory entry's changedAt (or createdAt if history is empty).
+  const docs = ALL_SEEDS.map((seed) => {
+    const createdAt = seed.createdAt ?? new Date(seed.issueDate);
+    const lastHistoryDate = seed.statusHistory?.length
+      ? new Date(seed.statusHistory[seed.statusHistory.length - 1].changedAt)
+      : createdAt;
+    const updatedAt = seed.updatedAt ?? lastHistoryDate;
+    return { ...seed, isDemoSeed: true, createdAt, updatedAt };
+  });
 
-  for (const seed of ALL_SEEDS) {
-    const doc = { ...seed, isDemoSeed: true };
-    const result = await Ticket.updateOne(
-      { trackingId: doc.trackingId },
-      { $setOnInsert: doc },
-      { upsert: true },
-    );
-    if (result.upsertedCount > 0) {
-      inserted++;
-    } else {
-      skipped++;
-    }
-  }
+  const result = await Ticket.insertMany(docs, { timestamps: false });
 
-  console.log(`[Seed] Done. Inserted: ${inserted}, Skipped (already exist): ${skipped} (total attempted: ${ALL_SEEDS.length})`);
+  console.log(`[Seed] Done. Inserted: ${result.length} (total attempted: ${ALL_SEEDS.length})`);
   await mongoose.connection.close();
   process.exit(0);
 }
