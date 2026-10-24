@@ -87,21 +87,6 @@
 
 > All data below is **fictional** — do not use real names, numbers, or descriptions.
 
-### Screenshot placeholders
-
-```
-┌─────────────────────────────────────────────┐
-│  [SCREENSHOT: Submit page — empty form]      │
-│  [SCREENSHOT: Submit page — success card     │
-│   showing tracking ID + AI triage]           │
-│  [SCREENSHOT: Track page — status timeline] │
-│  [SCREENSHOT: Admin dashboard — charts]      │
-│  [SCREENSHOT: Admin ticket detail page]      │
-└─────────────────────────────────────────────┘
-```
-
-To add real screenshots: place them in `docs/screenshots/` and update the `![alt](path)` references above.
-
 ### Step-by-step demo
 
 1. **Start both servers** — `npm run dev` from the repo root.
@@ -112,9 +97,17 @@ To add real screenshots: place them in `docs/screenshots/` and update the `![alt
    - Description: *"I cannot log in to the student portal. It says my password is incorrect even after resetting it twice."*
    - Phone (optional): `0712000001`
    - Tick consent → **Submit Issue**
+![SCREENSHOT: Submit page — empty form](docs/screenshots/Submit%20page%20-%20empty%20form.png)
 4. **Review the result card:** note the tracking ID (`HD-XXXX-XXXX`), category ("Portal Login Failure"), priority, ETA, AI summary, and the "What the AI received" PII preview.
+![SCREENSHOT: Submit page — success card](docs/screenshots/Submit%20page%20-%20success%20card.png)
 5. **Copy the tracking ID** and navigate to `/track` to see the status timeline.
+![SCREENSHOT: Track page — status timeline](docs/screenshots/Track%20page%20-%20status%20timeline.png)
 6. **Admin login:** visit `/admin/login`, enter the demo credentials from your `.env`, explore the dashboard and ticket table.
+**Dashboard**
+![SCREENSHOT: Admin dashboard — charts](docs/screenshots/Admin%20dshboard%20part%201.png)
+![SCREENSHOT: Admin dashboard part 2 — charts](docs/screenshots/Admin%20dashboard%20part%202.png)
+**Ticket Detail Page**
+![SCREENSHOT: Admin ticket detail page](docs/screenshots/Ticket%20detail%20page.png)
 7. **Update the ticket:** change status to "Resolved", add a public note, save — the Track page will show the update.
 8. **Rate & reopen:** go back to the Track page, rate the experience (1–5 stars), then try requesting a reopen.
 
