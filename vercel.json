@@ -3,13 +3,13 @@
   "buildCommand": "npm run build --workspace=client",
   "outputDirectory": "client/dist",
   "functions": {
-    "server/api/index.js": {
+    "api/index.js": {
       "memory": 256,
       "maxDuration": 10
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server/api/index.js" },
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)",     "destination": "/client/dist/index.html" }
   ],
   "headers": [
@@ -28,10 +28,7 @@
         { "key": "X-Content-Type-Options",           "value": "nosniff" },
         { "key": "X-Frame-Options",                  "value": "SAMEORIGIN" },
         { "key": "Referrer-Policy",                  "value": "strict-origin-when-cross-origin" },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
-        }
+        { "key": "Permissions-Policy",               "value": "camera=(), microphone=(), geolocation=()" }
       ]
     }
   ]
