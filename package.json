@@ -1,6 +1,7 @@
 {
   "name": "campus-helpdesk",
   "private": true,
+  "type": "module",
   "workspaces": [
     "client",
     "server",
