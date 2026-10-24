@@ -23,8 +23,7 @@
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
-    "mongoose": "^8.4.1",
-    "sanitize-html": "^2.18.1"
+    "mongoose": "^8.4.1"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
@@ -40,8 +39,6 @@
     "testMatch": [
       "**/tests/**/*.test.js"
     ],
-    "moduleNameMapper": {
-      "^sanitize-html$": "<rootDir>/../server/src/__mocks__/sanitize-html.js"
-    }
+    "moduleNameMapper": {}
   }
 }

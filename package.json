@@ -2,6 +2,9 @@
   "name": "campus-helpdesk",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "workspaces": [
     "client",
     "server",
