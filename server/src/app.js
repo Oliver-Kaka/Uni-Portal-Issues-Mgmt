@@ -7,12 +7,55 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { globalLimiter } from './middleware/rateLimiter.js';
 import ticketRoutes from './routes/tickets.js';
 import adminRoutes from './routes/admin.js';
 import mongoose from 'mongoose';
 
 const app = express();
+
+// ---------------------------------------------------------------------------
+// Security headers — helmet (must be before all other middleware)
+// ---------------------------------------------------------------------------
+app.use(
+  helmet({
+    // Allow the SPA to load in a frame on the same origin only (admin dashboard)
+    frameguard: { action: 'sameorigin' },
+    // CSP: restricts resources to same origin; Gemini calls are server-side so no external
+    // fetch needed from the browser.
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc:     ["'self'"],
+        scriptSrc:      ["'self'"],
+        styleSrc:       ["'self'", "'unsafe-inline'"],   // Tailwind injects inline styles at build
+        imgSrc:         ["'self'", 'data:'],
+        connectSrc:     ["'self'"],
+        fontSrc:        ["'self'"],
+        objectSrc:      ["'none'"],
+        upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+      },
+    },
+    // Prevent MIME sniffing
+    noSniff: true,
+    // Disable X-Powered-By
+    hidePoweredBy: true,
+    // Enforce HTTPS in production via HSTS
+    hsts: process.env.NODE_ENV === 'production'
+      ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+      : false,
+    // Disable caching for API responses that may contain sensitive data
+    // Individual routes override this where caching is acceptable
+    noCache: false, // We handle this per-route
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  }),
+);
+
+// Prevent clients from caching any /api responses (they may contain ticket data)
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 
 // ---------------------------------------------------------------------------
 // CORS — credentials must be allowed for httpOnly cookie to work

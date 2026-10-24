@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-/* Design tokens — WCAG AA compliant colour palette */
+/* ============================================================
+   Design tokens — WCAG AA compliant colour palette
+   Light mode (default)
+   ============================================================ */
 :root {
   --color-bg: #ffffff;
   --color-surface: #f7f8fa;
@@ -20,9 +23,76 @@
   --color-low: #16a34a;           /* green-600 */
 }
 
+/* ============================================================
+   Dark mode — applied when <html data-theme="dark"> OR
+   the user's OS preference is dark AND no manual override.
+   All token values maintain WCAG AA contrast (≥ 4.5:1).
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0d1117;
+    --color-surface: #161b22;
+    --color-border: #30363d;
+    --color-text: #e6edf3;
+    --color-muted: #8b949e;
+    --color-accent: #58a6ff;        /* blue-400 — AA on #0d1117 */
+    --color-accent-hover: #79c0ff;
+    --color-demo-bg: #2d1f02;
+    --color-demo-border: #d97706;
+    --color-demo-text: #fbbf24;     /* amber-400 — AA on #2d1f02 */
+    --color-urgent: #f87171;        /* red-400 */
+    --color-high: #fbbf24;          /* amber-400 */
+    --color-medium: #60a5fa;        /* blue-400 */
+    --color-low: #4ade80;           /* green-400 */
+  }
+}
+
+/* Manual dark override — set by ThemeContext via data-theme="dark" */
+:root[data-theme="dark"] {
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-muted: #8b949e;
+  --color-accent: #58a6ff;
+  --color-accent-hover: #79c0ff;
+  --color-demo-bg: #2d1f02;
+  --color-demo-border: #d97706;
+  --color-demo-text: #fbbf24;
+  --color-urgent: #f87171;
+  --color-high: #fbbf24;
+  --color-medium: #60a5fa;
+  --color-low: #4ade80;
+}
+
+/* Manual light override — keeps light tokens even when OS is dark */
+:root[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-surface: #f7f8fa;
+  --color-border: #e5e7eb;
+  --color-text: #1f2328;
+  --color-muted: #57606a;
+  --color-accent: #1d4ed8;
+  --color-accent-hover: #1e40af;
+  --color-demo-bg: #fef3c7;
+  --color-demo-border: #d97706;
+  --color-demo-text: #92400e;
+  --color-urgent: #dc2626;
+  --color-high: #d97706;
+  --color-medium: #2563eb;
+  --color-low: #16a34a;
+}
+
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
   line-height: 1.6;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Focus ring — visible in both light and dark */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

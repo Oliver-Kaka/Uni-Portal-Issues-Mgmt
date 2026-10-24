@@ -1,7 +1,11 @@
 {
   "name": "campus-helpdesk",
   "private": true,
-  "workspaces": ["client", "server", "shared"],
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
   "scripts": {
     "dev": "concurrently -n client,server -c cyan,green \"npm run dev --workspace=client\" \"npm run dev --workspace=server\"",
     "seed": "npm run seed --workspace=server",
@@ -10,5 +14,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "helmet": "^8.3.0"
   }
 }

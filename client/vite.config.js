@@ -13,4 +13,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React + React DOM in their own chunk
+          'vendor-react': ['react', 'react-dom'],
+          // React Router
+          'vendor-router': ['react-router-dom'],
+          // Charts library — heaviest dep, only loaded in admin
+          'vendor-recharts': ['recharts'],
+        },
+      },
+    },
+  },
 });

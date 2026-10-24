@@ -10,6 +10,7 @@ import { STATUSES, CATEGORIES, DEPARTMENTS } from '@helpdesk/shared';
 import PriorityBadge from '../components/PriorityBadge.jsx';
 import NeedsReviewBadge from '../components/NeedsReviewBadge.jsx';
 import StatusTimeline from '../components/StatusTimeline.jsx';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
 
 function Field({ label, value }) {
   return (
@@ -32,11 +33,13 @@ function Card({ title, children }) {
 export default function AdminTicketDetail() {
   const { trackingId } = useParams();
   const navigate = useNavigate();
-  const [ticket,  setTicket]  = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState('');
-  const [saving,  setSaving]  = useState(false);
-  const [saved,   setSaved]   = useState(false);
+  const [ticket,        setTicket]        = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [auditLogs,     setAuditLogs]     = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState('');
+  const [saving,        setSaving]        = useState(false);
+  const [saved,         setSaved]         = useState(false);
 
   const [form, setForm] = useState({
     status: '', routeTo: '', publicNote: '', internalNote: '',
@@ -48,6 +51,8 @@ export default function AdminTicketDetail() {
       .then(r => {
         const t = r.data.ticket;
         setTicket(t);
+        setNotifications(r.data.notifications || []);
+        setAuditLogs(r.data.auditLogs || []);
         setForm({
           status:                t.status       || '',
           routeTo:               t.routeTo      || '',
@@ -90,6 +95,7 @@ export default function AdminTicketDetail() {
   if (!ticket) return null;
 
   return (
+    <ErrorBoundary>
     <div className="space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <button onClick={() => navigate('/admin/tickets')} className="text-xs underline" style={{ color: 'var(--color-accent)' }}>← Back</button>
@@ -197,6 +203,46 @@ export default function AdminTicketDetail() {
           </button>
         </form>
       </Card>
+
+      {/* SMS / Notification Log */}
+      <Card title="SMS Notifications Log (Demo — Mock)">
+        {notifications.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>No notifications sent for this ticket yet.</p>
+        ) : (
+          <ol className="space-y-2">
+            {notifications.map((n, i) => (
+              <li key={i} className="text-xs border-l-2 pl-3" style={{ borderColor: 'var(--color-border)' }}>
+                <p className="font-medium" style={{ color: 'var(--color-text)' }}>{n.message}</p>
+                <p style={{ color: 'var(--color-muted)' }}>
+                  To: {n.to} · {n.status || 'sent'} · {new Date(n.sentAt || n.createdAt).toLocaleString()}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+        <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>
+          Demo Only: No real SMS is sent. Africa's Talking integration point is commented in <code>smsService.js</code>.
+        </p>
+      </Card>
+
+      {/* Audit Log */}
+      <Card title="Audit Log">
+        {auditLogs.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>No audit entries yet.</p>
+        ) : (
+          <ol className="space-y-2">
+            {auditLogs.map((a, i) => (
+              <li key={i} className="text-xs border-l-2 pl-3" style={{ borderColor: 'var(--color-border)' }}>
+                <p className="font-medium" style={{ color: 'var(--color-text)' }}>
+                  {a.action} — {a.adminUsername}
+                </p>
+                <p style={{ color: 'var(--color-muted)' }}>{new Date(a.createdAt).toLocaleString()}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Card>
     </div>
+    </ErrorBoundary>
   );
 }

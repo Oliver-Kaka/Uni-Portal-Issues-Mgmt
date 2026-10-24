@@ -1,12 +1,13 @@
 /**
  * Track Issue page — Page 2.
- * Features: bilingual labels, NeedsReviewBadge, AI disclaimer, suggestedSteps, detectedLanguage.
+ * Features: bilingual labels, NeedsReviewBadge, AI disclaimer, suggestedSteps,
+ *           detectedLanguage, satisfaction rating, reopen within window.
  * Demo Only: Use Fictional Data
  */
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { isValidTrackingId } from '@helpdesk/shared';
+import { isValidTrackingId, SATISFACTION_RATINGS, REOPEN_WINDOW_DAYS } from '@helpdesk/shared';
 import { useLang } from '../context/LanguageContext.jsx';
 import PriorityBadge from '../components/PriorityBadge.jsx';
 import NeedsReviewBadge from '../components/NeedsReviewBadge.jsx';
@@ -28,11 +29,22 @@ export default function TrackPage() {
   const navigate = useNavigate();
   const { t } = useLang();
 
-  const [inputId, setInputId] = useState(paramId || '');
+  const [inputId,    setInputId]    = useState(paramId || '');
   const [inputError, setInputError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [ticket, setTicket] = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [ticket,     setTicket]     = useState(null);
   const [fetchError, setFetchError] = useState('');
+
+  // Satisfaction rating state
+  const [rating,      setRating]      = useState(0);
+  const [ratingDone,  setRatingDone]  = useState(false);
+  const [ratingError, setRatingError] = useState('');
+
+  // Reopen state
+  const [reopenReason, setReopenReason] = useState('');
+  const [reopenDone,   setReopenDone]   = useState(false);
+  const [reopenError,  setReopenError]  = useState('');
+  const [reopenBusy,   setReopenBusy]   = useState(false);
 
   useEffect(() => {
     if (paramId && isValidTrackingId(paramId)) {
@@ -40,10 +52,44 @@ export default function TrackPage() {
     }
   }, [paramId]);
 
+  async function submitRating(star) {
+    try {
+      await axios.post(`${API_BASE}/api/tickets/${ticket.trackingId}/rating`, { rating: star });
+      setRating(star);
+      setRatingDone(true);
+    } catch {
+      setRatingError('Could not save rating. Please try again.');
+    }
+  }
+
+  async function handleReopen(e) {
+    e.preventDefault();
+    if (reopenReason.trim().length < 5) {
+      setReopenError('Please enter a reason of at least 5 characters.');
+      return;
+    }
+    setReopenBusy(true);
+    setReopenError('');
+    try {
+      await axios.post(`${API_BASE}/api/tickets/${ticket.trackingId}/reopen`, { reason: reopenReason });
+      setReopenDone(true);
+      // Refresh ticket to show updated status
+      const res = await axios.get(`${API_BASE}/api/tickets/${ticket.trackingId}`);
+      setTicket(res.data.ticket);
+    } catch (err) {
+      setReopenError(err.response?.data?.message || 'Could not reopen ticket. Please try again.');
+    } finally {
+      setReopenBusy(false);
+    }
+  }
+
   async function fetchTicket(id) {
     setLoading(true);
     setTicket(null);
     setFetchError('');
+    setRating(0);
+    setRatingDone(false);
+    setReopenDone(false);
     try {
       const res = await axios.get(`${API_BASE}/api/tickets/${id}`);
       setTicket(res.data.ticket);
@@ -227,6 +273,93 @@ export default function TrackPage() {
             </h2>
             <StatusTimeline history={ticket.statusHistory} />
           </div>
+
+          {/* Satisfaction rating — shown when ticket is Resolved or Closed */}
+          {['Resolved', 'Closed'].includes(ticket.status) && (
+            <div
+              className="rounded-lg border p-5 space-y-3"
+              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                Rate your experience
+              </h2>
+              {ratingDone ? (
+                <p className="text-sm" style={{ color: '#14532d' }}>
+                  ✓ Thank you for your feedback! You rated us {rating}/5.
+                </p>
+              ) : (
+                <>
+                  <div className="flex gap-2" role="group" aria-label="Satisfaction rating">
+                    {SATISFACTION_RATINGS.map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => submitRating(star)}
+                        aria-label={`Rate ${star} out of 5`}
+                        className="text-2xl focus:outline-none"
+                        style={{ color: star <= rating ? '#d97706' : 'var(--color-border)' }}
+                        onMouseEnter={() => setRating(star)}
+                        onMouseLeave={() => !ratingDone && setRating(0)}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  {ratingError && (
+                    <p className="text-xs" style={{ color: '#dc2626' }}>{ratingError}</p>
+                  )}
+                  <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Demo Only: Use Fictional Data</p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Reopen — shown when ticket is Resolved or Closed and not already reopened */}
+          {['Resolved', 'Closed'].includes(ticket.status) && !reopenDone && (
+            <div
+              className="rounded-lg border p-5 space-y-3"
+              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                Issue not resolved?
+              </h2>
+              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+                You can reopen this ticket within {REOPEN_WINDOW_DAYS} days of resolution.
+              </p>
+              <form onSubmit={handleReopen} className="space-y-2">
+                <textarea
+                  rows={2}
+                  placeholder="Describe why you need the ticket reopened…"
+                  value={reopenReason}
+                  onChange={e => setReopenReason(e.target.value)}
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  style={{ borderColor: reopenError ? '#dc2626' : 'var(--color-border)' }}
+                  aria-label="Reopen reason"
+                />
+                {reopenError && (
+                  <p className="text-xs" style={{ color: '#dc2626' }}>{reopenError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={reopenBusy}
+                  className="rounded px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--color-accent)' }}
+                >
+                  {reopenBusy ? 'Reopening…' : 'Request Reopen'}
+                </button>
+              </form>
+              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Demo Only: Use Fictional Data</p>
+            </div>
+          )}
+
+          {reopenDone && (
+            <p
+              className="text-sm rounded p-3"
+              style={{ backgroundColor: '#dcfce7', color: '#14532d', border: '1px solid #86efac' }}
+            >
+              ✓ Your ticket has been reopened. The help desk will be in touch.
+            </p>
+          )}
         </div>
       )}
     </div>
