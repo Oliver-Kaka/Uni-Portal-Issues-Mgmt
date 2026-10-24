@@ -8,11 +8,12 @@ import { loginLimiter } from '../middleware/rateLimiter.js';
 import { requireAdmin } from '../middleware/requireAdmin.js';
 import {
   login, logout, me,
-  listTickets, getTicketAdmin, updateTicket,
+  listTickets, getTicketAdmin, updateTicket, getNotifications,
   kpis, categoryBreakdown, priorityBreakdown, dailyVolume, resolutionByCategory,
   reportData,
 } from '../controllers/adminController.js';
 import { exportCSV, exportPDF } from '../controllers/reportController.js';
+import { detectOutages } from '../services/outageService.js';
 
 const router = Router();
 
@@ -22,9 +23,10 @@ router.post('/logout', requireAdmin, logout);
 router.get('/me',      requireAdmin, me);
 
 // Tickets
-router.get('/tickets',              requireAdmin, listTickets);
-router.get('/tickets/:trackingId',  requireAdmin, getTicketAdmin);
-router.patch('/tickets/:trackingId',requireAdmin, updateTicket);
+router.get('/tickets',                          requireAdmin, listTickets);
+router.get('/tickets/:trackingId',              requireAdmin, getTicketAdmin);
+router.patch('/tickets/:trackingId',            requireAdmin, updateTicket);
+router.get('/tickets/:trackingId/notifications',requireAdmin, getNotifications);
 
 // Analytics
 router.get('/analytics/kpis',        requireAdmin, kpis);
@@ -32,6 +34,12 @@ router.get('/analytics/categories',  requireAdmin, categoryBreakdown);
 router.get('/analytics/priorities',  requireAdmin, priorityBreakdown);
 router.get('/analytics/daily',       requireAdmin, dailyVolume);
 router.get('/analytics/resolution',  requireAdmin, resolutionByCategory);
+router.get('/analytics/outages',     requireAdmin, async (req, res, next) => {
+  try {
+    const outages = await detectOutages();
+    return res.json({ success: true, outages });
+  } catch (err) { next(err); }
+});
 
 // Reports
 router.get('/report',      requireAdmin, reportData);

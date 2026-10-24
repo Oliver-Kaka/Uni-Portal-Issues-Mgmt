@@ -5,7 +5,9 @@
  * Demo Only: Fictional data only.
  */
 import Ticket from '../models/Ticket.js';
+import AuditLog from '../models/AuditLog.js';
 import { verifyPassword, signToken } from '../services/authService.js';
+import { sendStatusSMS, getNotificationsForTicket } from '../services/smsService.js';
 import { CATEGORIES, PRIORITIES, STATUSES, DEPARTMENTS } from '@helpdesk/shared';
 
 const COOKIE_OPTIONS = {
@@ -130,9 +132,14 @@ export async function listTickets(req, res, next) {
 // ---------------------------------------------------------------------------
 export async function getTicketAdmin(req, res, next) {
   try {
-    const ticket = await Ticket.findOne({ trackingId: req.params.trackingId }).lean();
+    const { trackingId } = req.params;
+    const [ticket, notifications, auditLogs] = await Promise.all([
+      Ticket.findOne({ trackingId }).lean(),
+      getNotificationsForTicket(trackingId),
+      AuditLog.find({ trackingId }).sort({ createdAt: -1 }).limit(50).lean(),
+    ]);
     if (!ticket) return res.status(404).json({ success: false, message: 'Ticket not found.' });
-    return res.json({ success: true, _demo: 'Demo Only: Use Fictional Data', ticket });
+    return res.json({ success: true, _demo: 'Demo Only: Use Fictional Data', ticket, notifications, auditLogs });
   } catch (err) {
     next(err);
   }
@@ -149,13 +156,13 @@ export async function updateTicket(req, res, next) {
     const ticket = await Ticket.findOne({ trackingId });
     if (!ticket) return res.status(404).json({ success: false, message: 'Ticket not found.' });
 
+    const prevStatus = ticket.status;
     const updates = {};
-    if (status && STATUSES.includes(status))           updates.status = status;
-    if (routeTo && DEPARTMENTS.includes(routeTo))      updates.routeTo = routeTo;
+    if (status && STATUSES.includes(status))                 updates.status = status;
+    if (routeTo && DEPARTMENTS.includes(routeTo))            updates.routeTo = routeTo;
     if (adminCategory && CATEGORIES.includes(adminCategory)) updates.adminCategory = adminCategory;
-    if (typeof actualResolutionHours === 'number')     updates.actualResolutionHours = actualResolutionHours;
+    if (typeof actualResolutionHours === 'number')           updates.actualResolutionHours = actualResolutionHours;
 
-    // Append to statusHistory if status or notes changed
     if (status || publicNote || internalNote) {
       ticket.statusHistory.push({
         status: updates.status || ticket.status,
@@ -168,10 +175,34 @@ export async function updateTicket(req, res, next) {
     Object.assign(ticket, updates);
     await ticket.save();
 
+    // Audit log
+    await AuditLog.create({
+      adminUsername: req.admin?.username || 'system',
+      action: 'update_ticket',
+      trackingId,
+      details: { prevStatus, updates: { status, routeTo, adminCategory, actualResolutionHours, hasPublicNote: !!publicNote, hasInternalNote: !!internalNote } },
+    });
+
+    // Mock SMS when status changed and phone exists
+    if (updates.status && updates.status !== prevStatus && ticket.phone) {
+      const smsMsg = `Help Desk update for ${trackingId}: your ticket status is now "${updates.status}". Demo Only.`;
+      sendStatusSMS(ticket, smsMsg).catch(e => console.error('[SMS] failed:', e.message));
+    }
+
     return res.json({ success: true, _demo: 'Demo Only: Use Fictional Data', ticket });
   } catch (err) {
     next(err);
   }
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/admin/notifications/:trackingId
+// ---------------------------------------------------------------------------
+export async function getNotifications(req, res, next) {
+  try {
+    const notifications = await getNotificationsForTicket(req.params.trackingId);
+    return res.json({ success: true, notifications });
+  } catch (err) { next(err); }
 }
 
 // ---------------------------------------------------------------------------
