@@ -71,6 +71,12 @@ const ticketSchema = new Schema(
     status:        { type: String, enum: STATUSES, default: 'Open', required: true },
     statusHistory: { type: [statusHistorySchema], default: [] },
 
+    // Submitter satisfaction rating (1–5), submitted after resolution
+    satisfactionRating: { type: Number, min: 1, max: 5, default: null },
+
+    // Optional attachment filename (stored name only, not the file itself)
+    attachmentFilename: { type: String, default: null },
+
     // Seed flag
     isDemoSeed: { type: Boolean, default: false },
   },
