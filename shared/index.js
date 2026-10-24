@@ -356,9 +356,9 @@ export const FAQ_TIPS = {
 // ---------------------------------------------------------------------------
 
 export const AI_DISCLAIMER =
-  'AI Notice: The AI model used in this prototype has not been validated for accuracy, fairness, or completeness. ' +
-  'All triage results are suggestions only and must be reviewed by a qualified help desk agent before any action is taken. ' +
-  'Do not submit real personal data. This system uses fictional demo data only.';
+  'AI Notice: The AI model used in this prototype has not been grounded in any university policy, data or handbook. ' +
+  'Its categorisation, priority, time estimates and suggestions may be inaccurate and must not be treated as official guidance. ' +
+  'Demo Only: Use Fictional Data.';
 
 // ---------------------------------------------------------------------------
 // Convenience validation helpers (pure functions, no side-effects)
